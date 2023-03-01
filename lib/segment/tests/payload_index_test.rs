@@ -416,6 +416,7 @@ mod tests {
                 should: None,
                 must: Some(vec![condition]),
                 must_not: None,
+                nested: None,
             };
 
             let plain_result = plain_segment
