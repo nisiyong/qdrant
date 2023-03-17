@@ -105,6 +105,15 @@ struct Args {
 }
 
 fn main() -> anyhow::Result<()> {
+    #[cfg(feature = "tracing-tracy")]
+    {
+        use tracing_subscriber::layer::SubscriberExt as _;
+
+        tracing::subscriber::set_global_default(
+            tracing_subscriber::registry().with(tracing_tracy::TracyLayer::new()),
+        )?;
+    }
+
     let args = Args::parse();
     let settings = Settings::new(args.config_path).expect("Can't read config.");
 

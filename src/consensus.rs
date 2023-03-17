@@ -612,6 +612,7 @@ impl Consensus {
     ///
     /// Returns with err on failure to apply the state.
     /// If it receives message to stop the consensus - returns None instead of LightReady.
+    #[tracing::instrument(skip(self))]
     fn process_ready(
         &mut self,
         mut ready: raft::Ready,
@@ -683,6 +684,7 @@ impl Consensus {
     ///
     /// Returns with err on failure to apply the state.
     /// If it receives message to stop the consensus - returns `true`, otherwise `false`.
+    #[tracing::instrument(skip(self))]
     fn process_light_ready(&mut self, mut light_rd: raft::LightReady) -> anyhow::Result<bool> {
         let store = self.store();
         let peer_address_by_id = store.peer_address_by_id();
@@ -714,6 +716,7 @@ impl Consensus {
         store.set_raft_soft_state(state);
     }
 
+    #[tracing::instrument(skip(self))]
     fn send_messages(
         &self,
         messages: Vec<RaftMessage>,

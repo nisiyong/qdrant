@@ -10,6 +10,10 @@ edition = "2021"
 default = [ "web", "parking_lot" ]
 web = ["actix-web"]
 service_debug = ["parking_lot", "parking_lot/deadlock_detection"]
+tokio-tracing = ["tokio/tracing"]
+tracing-log = ["tracing/log"]
+tracing-tracy = ["dep:tracing-tracy", "tracing-subscriber"]
+tracy = ["tracing-tracy"]
 
 [dev-dependencies]
 serde_urlencoded = "0.7"
@@ -68,6 +72,11 @@ segment = { path = "lib/segment" }
 collection = { path = "lib/collection" }
 storage = { path = "lib/storage" }
 api = { path = "lib/api" }
+
+# Profiling
+tracing = { version = "0.1", features = ["async-await"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["registry", "std"], optional = true }
+tracing-tracy = { version = "0.10.2", optional = true }
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 tikv-jemallocator = "0.5"
