@@ -14,8 +14,12 @@ services:
     ports:
       - "127.0.0.1:6333:6333"
       - "127.0.0.1:6334:6334"
-      - "8086:8086/tcp"
-      - "8086:8086/udp"
+      - "127.0.0.1:8086:8086/tcp"
+      - "127.0.0.1:8086:8086/udp"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
 
   qdrant_2:
     image: qdrant-dev:latest
@@ -30,10 +34,14 @@ services:
     ports:
       - "127.0.0.1:6343:6333"
       - "127.0.0.1:6344:6334"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
 
   qdrant_3:
     image: qdrant-dev:latest
-    command: bash -c "sleep 5 && ./qdrant --bootstrap 'http://qdrant_1:6335' --uri 'http://qdrant_3:6335'"
+    command: bash -c "sleep 10 && ./qdrant --bootstrap 'http://qdrant_1:6335' --uri 'http://qdrant_3:6335'"
     restart: always
     environment:
       - QDRANT__LOG_LEVEL=debug,raft=info
@@ -44,3 +52,7 @@ services:
     ports:
       - "127.0.0.1:6353:6333"
       - "127.0.0.1:6354:6334"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"

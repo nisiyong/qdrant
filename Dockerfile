@@ -22,17 +22,20 @@ ENV TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
 
 RUN xx-apt install -y gcc g++ libc6-dev
 
+ARG PROFILE=release
+
+ARG FEATURES
+
 ARG RUSTFLAGS
 ENV RUSTFLAGS=$RUSTFLAGS
-
-ARG PROFILE=release
 
 COPY --from=planner /qdrant/recipe.json recipe.json
 RUN xx-cargo chef cook --profile $PROFILE --recipe-path recipe.json
 
 COPY . .
-RUN xx-cargo build --profile $PROFILE --bin qdrant \
-    && mv target/$(xx-cargo --print-target-triple)/debug/qdrant /qdrant/qdrant
+RUN xx-cargo build --profile $PROFILE ${FEATURES:+--features} $FEATURES --bin qdrant \
+    && PROFILE_DIR=$(if [ "$PROFILE" = dev ]; then echo debug; else echo $PROFILE; fi) \
+    && mv target/$(xx-cargo --print-target-triple)/$PROFILE_DIR/qdrant /qdrant/qdrant
 
 
 FROM debian:11-slim
