@@ -4,15 +4,8 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} lukemathwalker/cargo-chef:latest-r
 
 FROM chef AS planner
 WORKDIR /qdrant
-
 COPY . .
-
 RUN cargo chef prepare --recipe-path recipe.json
-
-RUN --mount=type=cache,target=/usr/local/cargo/git/db \
-    --mount=type=cache,target=/usr/local/cargo/registry/cache \
-    --mount=type=cache,target=/usr/local/cargo/registry/index \
-    cargo fetch
 
 
 FROM chef as builder
@@ -29,19 +22,20 @@ ENV TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
 
 RUN xx-apt install -y gcc g++ libc6-dev
 
+ARG PROFILE=release
+
+ARG FEATURES
+
+ARG RUSTFLAGS
+ENV RUSTFLAGS=$RUSTFLAGS
+
 COPY --from=planner /qdrant/recipe.json recipe.json
-RUN --mount=type=cache,target=/usr/local/cargo/git/db \
-    --mount=type=cache,target=/usr/local/cargo/registry/cache \
-    --mount=type=cache,target=/usr/local/cargo/registry/index \
-    xx-cargo chef cook --release --recipe-path recipe.json
+RUN xx-cargo chef cook --profile $PROFILE --recipe-path recipe.json
 
 COPY . .
-RUN --mount=type=cache,target=/usr/local/cargo/git/db \
-    --mount=type=cache,target=/usr/local/cargo/registry/cache \
-    --mount=type=cache,target=/usr/local/cargo/registry/index \
-    xx-cargo build --release --bin qdrant
-
-RUN mv target/$(xx-cargo --print-target-triple)/release/qdrant /qdrant/qdrant
+RUN xx-cargo build --profile $PROFILE ${FEATURES:+--features} $FEATURES --bin qdrant \
+    && PROFILE_DIR=$(if [ "$PROFILE" = dev ]; then echo debug; else echo $PROFILE; fi) \
+    && mv target/$(xx-cargo --print-target-triple)/$PROFILE_DIR/qdrant /qdrant/qdrant
 
 
 FROM debian:11-slim
