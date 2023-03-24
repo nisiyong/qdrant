@@ -44,6 +44,7 @@ pub fn optimize_filter<'a, F>(
     payload_provider: PayloadProvider,
     estimator: &F,
     total: usize,
+    nested_path: Option<&'a str>,
 ) -> (OptimizedFilter<'a>, CardinalityEstimation)
 where
     F: Fn(&Condition) -> CardinalityEstimation,
@@ -76,6 +77,7 @@ where
                     payload_provider.clone(),
                     estimator,
                     total,
+                    nested_path,
                 );
                 filter_estimations.push(estimation);
                 Some(optimized_conditions)
@@ -107,6 +109,7 @@ where
                 payload_provider.clone(),
                 estimator,
                 total,
+                Some(nested.path.as_ref()),
             );
             filter_estimations.push(estimation);
             let nested_optimized_filter = NestedOptimizedFilter {
@@ -130,6 +133,7 @@ fn convert_conditions<'a, F>(
     payload_provider: PayloadProvider,
     estimator: &F,
     total: usize,
+    nested_path: Option<&'a str>,
 ) -> Vec<(OptimizedCondition<'a>, CardinalityEstimation)>
 where
     F: Fn(&Condition) -> CardinalityEstimation,
@@ -145,6 +149,7 @@ where
                     payload_provider.clone(),
                     estimator,
                     total,
+                    nested_path,
                 );
                 (OptimizedCondition::Filter(optimized_filter), estimation)
             }
@@ -155,6 +160,7 @@ where
                     field_indexes,
                     payload_provider.clone(),
                     id_tracker,
+                    nested_path,
                 );
                 (OptimizedCondition::Checker(condition_checker), estimation)
             }
@@ -180,6 +186,7 @@ where
         payload_provider,
         estimator,
         total,
+        None,
     );
     // More probable conditions first
     converted.sort_by_key(|(_, estimation)| Reverse(estimation.exp));
@@ -195,6 +202,7 @@ fn optimize_must<'a, F>(
     payload_provider: PayloadProvider,
     estimator: &F,
     total: usize,
+    nested_path: Option<&'a str>,
 ) -> (Vec<OptimizedCondition<'a>>, CardinalityEstimation)
 where
     F: Fn(&Condition) -> CardinalityEstimation,
@@ -206,6 +214,7 @@ where
         payload_provider,
         estimator,
         total,
+        nested_path,
     );
     // Less probable conditions first
     converted.sort_by_key(|(_, estimation)| estimation.exp);
@@ -232,6 +241,7 @@ where
         payload_provider,
         estimator,
         total,
+        None,
     );
     // More probable conditions first, as it will be reverted
     converted.sort_by_key(|(_, estimation)| estimation.exp);

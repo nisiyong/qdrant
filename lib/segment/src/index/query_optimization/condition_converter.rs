@@ -16,23 +16,30 @@ pub fn condition_converter<'a>(
     field_indexes: &'a IndexesMap,
     payload_provider: PayloadProvider,
     id_tracker: &IdTrackerSS,
+    nested_path: Option<&'a str>,
 ) -> ConditionCheckerFn<'a> {
     match condition {
-        Condition::Field(field_condition) => field_indexes
-            .get(&field_condition.key)
-            .and_then(|indexes| {
-                indexes
-                    .iter()
-                    .filter_map(|index| field_condition_index(index, field_condition))
-                    .next()
-            })
-            .unwrap_or_else(|| {
-                Box::new(move |point_id| {
-                    payload_provider.with_payload(point_id, |payload| {
-                        check_field_condition(field_condition, &payload)
+        Condition::Field(field_condition) => {
+            let full_path = match nested_path {
+                Some(nested_path) => format!("{}.{}", nested_path, field_condition.key),
+                None => field_condition.key.clone(),
+            };
+            field_indexes
+                .get(&full_path)
+                .and_then(|indexes| {
+                    indexes
+                        .iter()
+                        .filter_map(|index| field_condition_index(index, field_condition))
+                        .next()
+                })
+                .unwrap_or_else(|| {
+                    Box::new(move |point_id| {
+                        payload_provider.with_payload(point_id, |payload| {
+                            check_field_condition(field_condition, &payload, nested_path)
+                        })
                     })
                 })
-            }),
+        }
         // ToDo: It might be possible to make this condition faster by using index to check
         //       if there is any value. But if value if not found,
         //       it does not mean that there are no values in payload

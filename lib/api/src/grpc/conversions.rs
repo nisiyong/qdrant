@@ -21,10 +21,10 @@ use crate::grpc::qdrant::{
     with_vectors_selector, CollectionDescription, CollectionOperationResponse, Condition, Distance,
     FieldCondition, Filter, GeoBoundingBox, GeoPoint, GeoRadius, HasIdCondition, HealthCheckReply,
     HnswConfigDiff, IsEmptyCondition, ListCollectionsResponse, ListValue, Match, NamedVectors,
-    NestedFilter, PayloadExcludeSelector, PayloadIncludeSelector, PayloadIndexParams, PayloadSchemaInfo,
-    PayloadSchemaType, PointId, QuantizationConfig, QuantizationSearchParams, Range,
-    ScalarQuantization, ScoredPoint, SearchParams, Struct, TextIndexParams, TokenizerType, Value,
-    ValuesCount, Vector, Vectors, VectorsSelector, WithPayloadSelector, WithVectorsSelector,
+    NestedFilter, PayloadExcludeSelector, PayloadIncludeSelector, PayloadIndexParams,
+    PayloadSchemaInfo, PayloadSchemaType, PointId, QuantizationConfig, QuantizationSearchParams,
+    Range, ScalarQuantization, ScoredPoint, SearchParams, Struct, TextIndexParams, TokenizerType,
+    Value, ValuesCount, Vector, Vectors, VectorsSelector, WithPayloadSelector, WithVectorsSelector,
 };
 
 pub fn payload_to_proto(payload: segment::types::Payload) -> HashMap<String, Value> {

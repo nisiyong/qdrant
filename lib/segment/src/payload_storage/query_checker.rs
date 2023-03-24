@@ -87,7 +87,7 @@ where
 {
     let checker = |condition: &Condition| match condition {
         Condition::Field(field_condition) => {
-            check_field_condition(field_condition, get_payload().deref())
+            check_field_condition(field_condition, get_payload().deref(), None)
         }
         Condition::IsEmpty(is_empty) => check_is_empty_condition(is_empty, get_payload().deref()),
         Condition::HasId(has_id) => {
@@ -107,8 +107,16 @@ pub fn check_is_empty_condition(is_empty: &IsEmptyCondition, payload: &Payload) 
     payload.get_value(&is_empty.is_empty.key).is_empty()
 }
 
-pub fn check_field_condition(field_condition: &FieldCondition, payload: &Payload) -> bool {
-    let field_values = payload.get_value(&field_condition.key);
+pub fn check_field_condition(
+    field_condition: &FieldCondition,
+    payload: &Payload,
+    nested_path: Option<&str>,
+) -> bool {
+    let full_path = match nested_path {
+        None => field_condition.key.clone(),
+        Some(path) => format!("{}.{}", path, field_condition.key),
+    };
+    let field_values = payload.get_value(&full_path);
     eprintln!(
         "field_values: {:#?} for condition {:?}",
         field_values, field_condition

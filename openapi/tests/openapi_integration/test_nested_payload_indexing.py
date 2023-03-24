@@ -4,7 +4,7 @@ import json
 from .helpers.helpers import request_with_validation
 from .helpers.collection_setup import drop_collection
 
-collection_name = 'test_collection_payload_indexing'
+collection_name = 'test_collection_nested_payload_indexing'
 
 
 def nested_payload_collection_setup(collection_name, on_disk_payload=False):
@@ -81,7 +81,7 @@ def nested_payload_collection_setup(collection_name, on_disk_payload=False):
                                 {
                                     "name": "London",
                                     "population": 8.9,
-                                    "sightseeing": ["Big Ben", "London Eye"]
+                                    "sightseeing": ["Big Ben", "London Eye", "Buckingham Palace"]
                                 },
                                 {
                                     "name": "Manchester",
@@ -108,7 +108,7 @@ def nested_payload_collection_setup(collection_name, on_disk_payload=False):
                                 {
                                     "name": "Paris",
                                     "population": 2.2,
-                                    "sightseeing": ["Eiffel Tower", "Louvre"]
+                                    "sightseeing": ["Eiffel Tower", "Louvre", "Notre Dame", "Arc de Triomphe"]
                                 },
                                 {
                                     "name": "Marseille",
@@ -177,7 +177,7 @@ def setup():
     drop_collection(collection_name=collection_name)
 
 
-def test_payload_indexing_operations():
+def test_nested_payload_indexing_operations():
     response = request_with_validation(
         api='/collections/{collection_name}',
         method="GET",
@@ -349,7 +349,7 @@ def test_payload_indexing_operations():
                     {
                         "key": "country.cities[].sightseeing",
                         "values_count": {
-                            "gt": 2
+                            "gt": 3
                         }
                     }
                 ]
@@ -359,7 +359,7 @@ def test_payload_indexing_operations():
     )
     assert response.ok
     assert len(response.json()['result']['points']) == 1
-    assert response.json()['result']['points'][0]['payload']['country']['name'] == "Japan"
+    assert response.json()['result']['points'][0]['payload']['country']['name'] == "France"
 
     # Search with nested filter on non indexed payload
     response = request_with_validation(
@@ -374,7 +374,65 @@ def test_payload_indexing_operations():
                         {
                             "key": "sightseeing",
                             "values_count": {
-                                "gt": 2
+                                "gt": 3
+                            }
+                        }
+                    ]
+                },
+            },
+            "limit": 3
+        }
+    )
+    assert response.ok
+    assert len(response.json()['result']['points']) == 1
+    assert response.json()['result']['points'][0]['payload']['country']['name'] == "France"
+
+    # Search with nested filter on indexed payload
+    response = request_with_validation(
+        api='/collections/{collection_name}/points/scroll',
+        method="POST",
+        path_params={'collection_name': collection_name},
+        body={
+            "filter": {
+                "nested": {
+                    "path": "country.cities[]",
+                    "must": [
+                        {
+                            "key": "population",
+                            "range": {
+                                "gte": 9.0,
+                            }
+                        }
+                    ]
+                },
+            },
+            "limit": 3
+        }
+    )
+    assert response.ok
+    assert len(response.json()['result']['points']) == 1
+    assert response.json()['result']['points'][0]['payload']['country']['name'] == "Japan"
+
+    # Search with nested filter on indexed & non payload
+    response = request_with_validation(
+        api='/collections/{collection_name}/points/scroll',
+        method="POST",
+        path_params={'collection_name': collection_name},
+        body={
+            "filter": {
+                "nested": {
+                    "path": "country.cities[]",
+                    "must": [
+                        {
+                            "key": "population",
+                            "range": {
+                                "gte": 9.0,
+                            }
+                        },
+                        {
+                            "key": "sightseeing",
+                            "values_count": {
+                                "gt": 3
                             }
                         }
                     ]
@@ -385,8 +443,9 @@ def test_payload_indexing_operations():
     )
     assert response.ok
     print(json.dumps(response.json(), indent=2))
-    assert len(response.json()['result']['points']) == 1
-    assert response.json()['result']['points'][0]['payload']['country']['name'] == "Japan"
+    # No cities with population greater than 9.0 and more than 3 sightseeing
+    # TODO: fails! fetches France & Japan :(
+    assert len(response.json()['result']['points']) == 0
 
     # Delete indexes
     response = request_with_validation(
